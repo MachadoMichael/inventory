@@ -18,9 +18,7 @@ engine = create_engine(
 
 def init_db() -> None:
     import app.models  # noqa: F401  registra as tabelas no metadata
-    from app.db import constraints
 
-    constraints.register()
     SQLModel.metadata.create_all(engine)
 
 

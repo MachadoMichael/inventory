@@ -15,7 +15,7 @@ from app.core.exceptions import (
     ReservationNotFound,
     Shortage,
 )
-from app.db.base import utcnow
+from app.models.base import utcnow
 from app.models import (
     MovementType,
     Product,
@@ -196,4 +196,4 @@ class ReservationService:
                 reservation_id=reservation_id,
                 balance_after=product.quantity_on_hand,
             )
- 
+        )

@@ -1,5 +1,6 @@
 import enum
 
+
 class ReservationStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
     CONSUMED = "CONSUMED"
