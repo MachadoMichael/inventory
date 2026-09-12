@@ -9,9 +9,9 @@ Faz parte de um sistema de três módulos:
 
 | Módulo | Repositório | Porta |
 |---|---|---|
-| orders-api (principal) | https://github.com/SEU-USUARIO/orders-api | 8000 |
-| **inventory-service** (este) | https://github.com/SEU-USUARIO/inventory-service | 8001 |
-| delivery-service | https://github.com/SEU-USUARIO/delivery-service | 8002 |
+| orders-api (principal) | https://github.com/MachadoMichael/order | 8000 |
+| **inventory-service** (este) | https://github.com/MachadoMichael/inventory | 8001 |
+| delivery-service | https://github.com/MachadoMichael/delivery | 8002 |
 
 O diagrama da arquitetura está no README do repositório principal.
 
