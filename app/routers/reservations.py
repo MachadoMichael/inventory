@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Path, Query, Response, status
 
-from app.core.pagination import ErrorResponse
+from app.core.responses import ErrorResponse
 from app.models import ReleaseReason, ReservationCreate, ReservationPublic
 from app.routers.deps import ReservationServiceDep
 from app.services import ReservationLine

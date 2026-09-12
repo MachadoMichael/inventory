@@ -2,7 +2,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Path, Query, status
 
-from app.core.pagination import ErrorResponse, Page
+from app.core.responses import ErrorResponse, Page
 from app.models import ProductPublic, ProductReplenish
 from app.routers.deps import ProductServiceDep
 

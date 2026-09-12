@@ -187,7 +187,7 @@ inventory/
     ├── database.py      engine, sessão e criação do schema
     ├── seed.py          catálogo inicial
     ├── core/            config, exceptions, error_handlers,
-    │                    pagination (Page[T], ErrorResponse)
+    │                    responses (Page[T], ErrorResponse)
     ├── models/          Product, Reservation, ReservationItem, StockMovement
     ├── repositories/    acesso a dados, paginação, SELECT FOR UPDATE
     ├── services/        regra de negócio: reserva, liberação, consumo
