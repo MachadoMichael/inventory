@@ -6,7 +6,7 @@ from sqlmodel import Session
 from app.core.error_handlers import register_error_handlers
 from app.seed import seed
 from app.database import engine, init_db
-from app.routers import health_router, products_router, reservations_router
+from app.routers import products_router, reservations_router
 
 TAGS = [
     {
@@ -17,10 +17,9 @@ TAGS = [
     },
     {
         "name": "reservas",
-        "description": "Ciclo de vida da promessa de saldo: **reservar**, "
-        "**liberar** (a compensacao) e **consumir** (a saida definitiva).",
+        "description": "A promessa de saldo feita a um pedido: **reservar** e "
+        "**liberar** (a compensacao).",
     },
-    {"name": "infra", "description": "Liveness."},
 ]
 
 DESCRIPTION = """
@@ -57,9 +56,14 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    # Swagger pronto para demonstracao: Try it out ja ligado e exemplos preenchidos.
+    swagger_ui_parameters={
+        "tryItOutEnabled": True,
+        "displayRequestDuration": True,
+        "defaultModelsExpandDepth": -1,
+    },
 )
 
 register_error_handlers(app)
-app.include_router(health_router)
 app.include_router(products_router)
 app.include_router(reservations_router)

@@ -56,9 +56,3 @@ class ProductPublic(ProductBase):
     quantity_available: int  # derivado: on_hand - reserved
     created_at: datetime
     updated_at: datetime
-
-
-class ProductReplenish(SQLModel):
-    quantity: int = Field(
-        gt=0, description="Unidades que entraram no estoque", schema_extra={"examples": [25]}
-    )

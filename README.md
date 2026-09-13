@@ -3,7 +3,7 @@
 Serviço de **estoque** do MVP de microsserviços. É o **dono do saldo**: nenhum outro
 serviço escreve na tabela de produtos. A `orders-api` pergunta por HTTP se há saldo
 antes de confirmar um pedido, e desfaz a reserva por esta mesma API se a etapa
-seguinte do fluxo falhar.
+seguinte do fluxo falhar ou se o pedido for cancelado.
 
 Faz parte de um sistema de três módulos:
 
@@ -28,15 +28,12 @@ O saldo vive em **dois contadores**, não um:
 | `quantity_available` | A diferença entre os dois — o que ainda dá para vender |
 
 Essa separação é o que dá sentido à reserva: **reservar move do disponível para o
-reservado sem tirar nada da prateleira.** Liberar desfaz. Despachar aí sim baixa o
-saldo físico.
+reservado sem tirar nada da prateleira.** Liberar desfaz.
 
 ### Ciclo de vida da reserva
 
 ```
-                    ┌─── CONSUMED    (a mercadoria saiu)
-   ACTIVE ──────────┤
-                    └─── RELEASED    (o saldo voltou ao disponível)
+   ACTIVE ──────────► RELEASED    (o saldo voltou ao disponível)
 ```
 
 Uma reserva liberada sempre registra o **motivo**: `COMPENSATION` (a orders-api
@@ -86,9 +83,8 @@ uvicorn app.main:app --reload --port 8001
 
 Na primeira execução as tabelas são criadas e o catálogo é populado com 8 produtos.
 
-- **Swagger:** http://localhost:8001/docs
+- **Swagger:** http://localhost:8001/docs — exemplos preenchidos, é só clicar Execute
 - **ReDoc:** http://localhost:8001/redoc
-- **Health:** http://localhost:8001/health
 
 ---
 
@@ -100,22 +96,16 @@ Na primeira execução as tabelas são criadas e o catálogo é populado com 8 p
 |---|---|---|
 | `GET` | `/products` | Catálogo paginado, com `?category=`, `?available=true`, `?sort=`, `?order=`, `?limit=`, `?offset=` |
 | `GET` | `/products/{sku}` | Saldo físico, reservado e disponível |
-| `POST` | `/products/{sku}/replenishments` | Entrada de estoque, registrada no razão |
 
 ### Reservas
 
 | Método | Rota | Descrição |
 |---|---|---|
 | `POST` | `/reservations` | **Reserva saldo.** Idempotente por `order_id` |
-| `GET` | `/reservations/{id}` | Estado da reserva e seus itens |
 | `DELETE` | `/reservations/{id}` | **Compensação:** libera e devolve o saldo. Aceita `?reason=` |
-| `POST` | `/reservations/{id}/consumption` | Baixa definitiva: a mercadoria saiu |
 
-### Infra
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/health` | Liveness do serviço e do banco |
+O id da reserva é o próprio `order_id`: um pedido tem no máximo uma reserva, e quem
+conhece o pedido já sabe qual reserva desfazer.
 
 ### Erros
 
@@ -124,14 +114,13 @@ Na primeira execução as tabelas são criadas e o catálogo é populado com 8 p
 | `PRODUCT_NOT_FOUND` | 404 | SKU fora do catálogo |
 | `RESERVATION_NOT_FOUND` | 404 | Reserva inexistente |
 | `INSUFFICIENT_STOCK` | 409 | Saldo insuficiente, **com a lista de faltas** |
-| `RESERVATION_NOT_ACTIVE` | 409 | Operação incompatível com o status |
 | `INVALID_QUANTITY` | 422 | Quantidade menor ou igual a zero |
 
 ```json
 {
   "code": "INSUFFICIENT_STOCK",
-  "message": "saldo insuficiente: SKU-2071 (pedido 50, disponivel 7)",
-  "details": [{ "sku": "SKU-2071", "requested": 50, "available": 7 }]
+  "message": "saldo insuficiente: SKU-2071 (pedido 50, disponivel 8)",
+  "details": [{ "sku": "SKU-2071", "requested": 50, "available": 8 }]
 }
 ```
 
@@ -149,18 +138,13 @@ curl "localhost:8001/products?available=true"
 # Reservar
 curl -X POST localhost:8001/reservations -H 'Content-Type: application/json' -d '{
   "order_id": "11111111-1111-1111-1111-111111111111",
-  "requested_by": "22222222-2222-2222-2222-222222222222",
   "items": [{"sku": "SKU-1042", "quantity": 2}]
 }'
 #   -> 201 na primeira vez, 200 nas seguintes (mesma reserva, saldo intacto)
 
 # Compensar
-curl -X DELETE "localhost:8001/reservations/{id}?reason=COMPENSATION"
+curl -X DELETE "localhost:8001/reservations/11111111-1111-1111-1111-111111111111?reason=COMPENSATION"
 #   -> o saldo volta ao disponível
-
-# Entrada de estoque
-curl -X POST localhost:8001/products/SKU-4501/replenishments \
-  -H 'Content-Type: application/json' -d '{"quantity": 25}'
 ```
 
 ---
@@ -190,8 +174,8 @@ inventory/
     │                    responses (Page[T], ErrorResponse)
     ├── models/          Product, Reservation, ReservationItem, StockMovement
     ├── repositories/    acesso a dados, paginação, SELECT FOR UPDATE
-    ├── services/        regra de negócio: reserva, liberação, consumo
-    └── routers/         products, reservations, health
+    ├── services/        regra de negócio: reserva e liberação
+    └── routers/         products, reservations
 ```
 
 Cada arquivo de `models/` traz a tabela **e** o contrato HTTP correspondente —

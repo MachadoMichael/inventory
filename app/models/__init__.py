@@ -1,6 +1,6 @@
 from app.models.base import TimestampMixin, utcnow
 from app.models.enums import MovementType, ReleaseReason, ReservationStatus
-from app.models.product import Product, ProductPublic, ProductReplenish
+from app.models.product import Product, ProductPublic
 from app.models.reservation import (
     Reservation,
     ReservationCreate,
@@ -15,7 +15,6 @@ __all__ = [
     "MovementType",
     "Product",
     "ProductPublic",
-    "ProductReplenish",
     "ReleaseReason",
     "Reservation",
     "ReservationCreate",

@@ -20,7 +20,6 @@ class Reservation(TimestampMixin, table=True):
     order_id: UUID = Field(unique=True, index=True)
     status: ReservationStatus = Field(default=ReservationStatus.ACTIVE, index=True)
     release_reason: ReleaseReason | None = None
-    requested_by: UUID
     expires_at: datetime = Field(index=True)
     consumed_at: datetime | None = None
     released_at: datetime | None = None
@@ -43,9 +42,9 @@ class ReservationLineIn(SQLModel):
 
 class ReservationCreate(SQLModel):
     order_id: UUID = Field(
-        description="Pedido na orders-api. Repetir o mesmo valor devolve a reserva existente."
+        description="Pedido na orders-api. Tambem e o id da reserva; repetir o mesmo "
+        "valor devolve a reserva existente."
     )
-    requested_by: UUID = Field(description="Usuario que originou o pedido")
     items: list[ReservationLineIn] = Field(min_length=1)
     ttl_minutes: int | None = Field(
         default=None, gt=0, description="Sobrescreve o prazo padrao da reserva"
@@ -63,7 +62,6 @@ class ReservationPublic(SQLModel):
     order_id: UUID
     status: ReservationStatus
     release_reason: ReleaseReason | None = None
-    requested_by: UUID
     created_at: datetime
     expires_at: datetime
     consumed_at: datetime | None = None
@@ -77,7 +75,6 @@ class ReservationPublic(SQLModel):
             order_id=reservation.order_id,
             status=reservation.status,
             release_reason=reservation.release_reason,
-            requested_by=reservation.requested_by,
             created_at=reservation.created_at,
             expires_at=reservation.expires_at,
             consumed_at=reservation.consumed_at,

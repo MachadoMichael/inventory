@@ -1,6 +1,6 @@
-from app.core.exceptions import InvalidQuantity, ProductNotFound
-from app.models import MovementType, Product, StockMovement
-from app.repositories import MovementRepository, ProductRepository
+from app.core.exceptions import ProductNotFound
+from app.models import Product
+from app.repositories import ProductRepository
 from sqlmodel import Session
 
 
@@ -8,7 +8,6 @@ class ProductService:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.products = ProductRepository(session)
-        self.movements = MovementRepository(session)
 
     def list_products(
         self,
@@ -36,23 +35,3 @@ class ProductService:
         if product is None:
             raise ProductNotFound([sku])
         return product
-
-    def replenish(self, sku: str, quantity: int) -> Product:
-        if quantity <= 0:
-            raise InvalidQuantity("a quantidade de reposicao deve ser maior que zero")
-
-        product = self.get_by_sku(sku)
-        locked = self.products.lock_by_ids([product.id])[product.id]
-        locked.quantity_on_hand += quantity
-
-        self.movements.add(
-            StockMovement(
-                product_id=locked.id,
-                type=MovementType.RECEIPT,
-                quantity=quantity,
-                balance_after=locked.quantity_on_hand,
-            )
-        )
-        self.session.commit()
-        self.session.refresh(locked)
-        return locked

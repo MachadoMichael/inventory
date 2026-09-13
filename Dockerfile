@@ -16,7 +16,8 @@ USER appuser
 
 EXPOSE 8001
 
+# O schema OpenAPI so e servido depois que o lifespan criou as tabelas e o seed.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=4).status == 200 else 1)"
+  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/openapi.json', timeout=4).status == 200 else 1)"
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]

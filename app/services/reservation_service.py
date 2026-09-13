@@ -45,7 +45,6 @@ class ReservationService:
         self,
         *,
         order_id: UUID,
-        requested_by: UUID,
         lines: Sequence[ReservationLine],
         ttl_minutes: int | None = None,
     ) -> tuple[Reservation, bool]:
@@ -67,9 +66,10 @@ class ReservationService:
             raise InsufficientStock(shortages)
 
         ttl = ttl_minutes if ttl_minutes is not None else settings.reservation_ttl_minutes
+        # Um pedido tem no maximo uma reserva, entao o id dela e o proprio pedido.
         reservation = Reservation(
+            id=order_id,
             order_id=order_id,
-            requested_by=requested_by,
             expires_at=utcnow() + timedelta(minutes=ttl),
         )
 
@@ -121,27 +121,6 @@ class ReservationService:
         reservation.status = ReservationStatus.RELEASED
         reservation.release_reason = reason
         reservation.released_at = utcnow()
-
-        self.session.commit()
-        self.session.refresh(reservation)
-        return reservation
-
-    def consume(self, reservation_id: UUID) -> Reservation:
-        """Baixa definitiva: a mercadoria saiu."""
-        reservation = self.get(reservation_id)
-
-        if reservation.status is ReservationStatus.CONSUMED:
-            return reservation
-        if reservation.status is ReservationStatus.RELEASED:
-            raise ReservationNotActive(reservation_id, "RELEASED", "consumir")
-
-        for item, product in self._locked_items(reservation):
-            product.quantity_on_hand -= item.quantity
-            product.quantity_reserved -= item.quantity
-            self._record(product, MovementType.DISPATCH, -item.quantity, reservation.id)
-
-        reservation.status = ReservationStatus.CONSUMED
-        reservation.consumed_at = utcnow()
 
         self.session.commit()
         self.session.refresh(reservation)
